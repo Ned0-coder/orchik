@@ -1,4 +1,4 @@
-streamlit==1.29.0
-numpy>=1.24.0, <2.0.0
-pyautogui==0.9.54
-pyaudio==0.2.11
+streamlit>=1.28.0
+pyaudio>=0.2.11
+numpy>=1.24.0
+pyautogui>=0.9.54
