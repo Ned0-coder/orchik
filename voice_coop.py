@@ -5,9 +5,11 @@ import time
 import threading
 import socket
 import pickle
-import pyautogui
 import warnings
 import sys
+import subprocess
+import platform
+import os
 
 warnings.filterwarnings("ignore")
 
@@ -19,6 +21,190 @@ RATE = 44100
 
 # Конфигурация сети
 PORT = 12345
+
+
+class KeyPresser:
+    """Класс для нажатия клавиш, работающий без GUI зависимости"""
+    
+    @staticmethod
+    def press(key):
+        """Нажать одну клавишу"""
+        try:
+            # Для Windows
+            if platform.system() == "Windows":
+                import ctypes
+                # Простейшие коды клавиш
+                key_map = {
+                    'space': 0x20,
+                    'enter': 0x0D,
+                    'a': 0x41,
+                    'b': 0x42,
+                    'c': 0x43,
+                    'd': 0x44,
+                    'e': 0x45,
+                    'f': 0x46,
+                    'g': 0x47,
+                    'h': 0x48,
+                    'i': 0x49,
+                    'j': 0x4A,
+                    'k': 0x4B,
+                    'l': 0x4C,
+                    'm': 0x4D,
+                    'n': 0x4E,
+                    'o': 0x4F,
+                    'p': 0x50,
+                    'q': 0x51,
+                    'r': 0x52,
+                    's': 0x53,
+                    't': 0x54,
+                    'u': 0x55,
+                    'v': 0x56,
+                    'w': 0x57,
+                    'x': 0x58,
+                    'y': 0x59,
+                    'z': 0x5A,
+                    '0': 0x30,
+                    '1': 0x31,
+                    '2': 0x32,
+                    '3': 0x33,
+                    '4': 0x34,
+                    '5': 0x35,
+                    '6': 0x36,
+                    '7': 0x37,
+                    '8': 0x38,
+                    '9': 0x39,
+                    'f1': 0x70,
+                    'f2': 0x71,
+                    'f3': 0x72,
+                    'f4': 0x73,
+                    'f5': 0x74,
+                    'f6': 0x75,
+                    'f7': 0x76,
+                    'f8': 0x77,
+                    'f9': 0x78,
+                    'f10': 0x79,
+                    'f11': 0x7A,
+                    'f12': 0x7B,
+                }
+                
+                if key.lower() in key_map:
+                    key_code = key_map[key.lower()]
+                    # Симуляция нажатия и отпускания клавиши
+                    ctypes.windll.user32.keybd_event(key_code, 0, 0, 0)  # Нажатие
+                    time.sleep(0.05)
+                    ctypes.windll.user32.keybd_event(key_code, 0, 2, 0)  # Отпускание
+            
+            # Для Linux (используем xdotool если доступен)
+            elif platform.system() == "Linux":
+                # Проверяем доступность xdotool
+                if subprocess.run(["which", "xdotool"], capture_output=True).returncode == 0:
+                    subprocess.run(["xdotool", "key", key], check=False)
+                else:
+                    print(f"[SIMULATED] Нажата клавиша: {key}")
+            
+            # Для macOS
+            elif platform.system() == "Darwin":
+                # Используем osascript для имитации нажатий клавиш
+                applescript = f'''
+                tell application "System Events"
+                    keystroke "{key}"
+                end tell
+                '''
+                subprocess.run(["osascript", "-e", applescript], check=False)
+            
+            else:
+                print(f"[SIMULATED] Нажата клавиша: {key}")
+                
+        except Exception as e:
+            print(f"Ошибка при нажатии клавиши {key}: {e}")
+            # Заглушка для отладки
+            print(f"[DEBUG] Клавиша нажата (эмуляция): {key}")
+    
+    @staticmethod
+    def hotkey(*keys):
+        """Нажать комбинацию клавиш"""
+        try:
+            # Для Windows
+            if platform.system() == "Windows":
+                import ctypes
+                
+                # Простейшая реализация для common комбинаций
+                if len(keys) == 2 and keys[0].lower() == "ctrl" and keys[1] == "c":
+                    # Ctrl+C
+                    ctypes.windll.user32.keybd_event(0x11, 0, 0, 0)  # Ctrl
+                    time.sleep(0.05)
+                    ctypes.windll.user32.keybd_event(0x43, 0, 0, 0)  # C
+                    time.sleep(0.05)
+                    ctypes.windll.user32.keybd_event(0x43, 0, 2, 0)  # C отпустить
+                    time.sleep(0.05)
+                    ctypes.windll.user32.keybd_event(0x11, 0, 2, 0)  # Ctrl отпустить
+                
+                elif len(keys) == 2 and keys[0].lower() == "ctrl" and keys[1] == "v":
+                    # Ctrl+V
+                    ctypes.windll.user32.keybd_event(0x11, 0, 0, 0)  # Ctrl
+                    time.sleep(0.05)
+                    ctypes.windll.user32.keybd_event(0x56, 0, 0, 0)  # V
+                    time.sleep(0.05)
+                    ctypes.windll.user32.keybd_event(0x56, 0, 2, 0)  # V отпустить
+                    time.sleep(0.05)
+                    ctypes.windll.user32.keybd_event(0x11, 0, 2, 0)  # Ctrl отпустить
+                
+                else:
+                    # Общий случай
+                    for key in keys:
+                        KeyPresser.press(key)
+            
+            # Для Linux
+            elif platform.system() == "Linux":
+                if subprocess.run(["which", "xdotool"], capture_output=True).returncode == 0:
+                    key_str = "+".join(keys)
+                    subprocess.run(["xdotool", "key", key_str], check=False)
+                else:
+                    print(f"[SIMULATED] Нажата комбинация: {'+'.join(keys)}")
+            
+            # Для macOS
+            elif platform.system() == "Darwin":
+                key_map = {
+                    "ctrl": "control",
+                    "alt": "option",
+                    "shift": "shift",
+                    "cmd": "command"
+                }
+                
+                modifiers = []
+                main_key = None
+                
+                for key in keys:
+                    if key.lower() in key_map:
+                        modifiers.append(key_map[key.lower()])
+                    else:
+                        main_key = key
+                
+                if main_key:
+                    modifier_str = "+".join(modifiers) if modifiers else ""
+                    if modifier_str:
+                        applescript = f'''
+                        tell application "System Events"
+                            key down {{"{" + ".join(modifiers)}"}}
+                            keystroke "{main_key}"
+                            key up {{"{" + ".join(modifiers)}"}}
+                        end tell
+                        '''
+                    else:
+                        applescript = f'''
+                        tell application "System Events"
+                            keystroke "{main_key}"
+                        end tell
+                        '''
+                    
+                    subprocess.run(["osascript", "-e", applescript], check=False)
+            
+            else:
+                print(f"[SIMULATED] Нажата комбинация: {'+'.join(keys)}")
+                
+        except Exception as e:
+            print(f"Ошибка при нажатии комбинации {keys}: {e}")
+            print(f"[DEBUG] Комбинация нажата (эмуляция): {'+'.join(keys)}")
 
 
 class AudioProcessor:
@@ -157,25 +343,22 @@ class NetworkServer:
     def get_local_ip(self):
         """Получение локального IP адреса"""
         try:
-            # Альтернативный способ получения IP
-            hostname = socket.gethostname()
-            ip_address = socket.gethostbyname(hostname)
-            if ip_address.startswith("127."):
-                # Если это localhost, пробуем другой способ
-                s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-                try:
-                    # doesn't even have to be reachable
-                    s.connect(('10.255.255.255', 1))
-                    ip_address = s.getsockname()[0]
-                except Exception:
-                    ip_address = '127.0.0.1'
-                finally:
-                    s.close()
+            # Простой способ получить IP
+            s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            s.connect(("8.8.8.8", 80))
+            ip_address = s.getsockname()[0]
+            s.close()
             self.local_ip = ip_address
             return ip_address
         except:
-            self.local_ip = "127.0.0.1"
-            return "127.0.0.1"
+            try:
+                hostname = socket.gethostname()
+                ip_address = socket.gethostbyname(hostname)
+                self.local_ip = ip_address
+                return ip_address
+            except:
+                self.local_ip = "127.0.0.1"
+                return "127.0.0.1"
 
     def start_server(self):
         try:
@@ -236,7 +419,7 @@ class NetworkServer:
                                         key = command.get('key', '')
                                         if key:
                                             try:
-                                                pyautogui.press(key)
+                                                KeyPresser.press(key)
                                                 print(f"Нажата клавиша: {key}")
                                             except Exception as e:
                                                 print(f"Ошибка нажатия {key}: {e}")
@@ -244,7 +427,7 @@ class NetworkServer:
                                         keys = command.get('keys', [])
                                         if keys and len(keys) >= 2:
                                             try:
-                                                pyautogui.hotkey(*keys)
+                                                KeyPresser.hotkey(*keys)
                                                 print(f"Нажата комбинация: {keys}")
                                             except Exception as e:
                                                 print(f"Ошибка комбинации {keys}: {e}")
@@ -529,10 +712,10 @@ def solo_interface():
                     try:
                         if '+' in button_input:
                             keys = [k.strip() for k in button_input.split('+')]
-                            pyautogui.hotkey(*keys)
+                            KeyPresser.hotkey(*keys)
                             action_text = f"Комбинация: {'+'.join(keys)}"
                         else:
-                            pyautogui.press(button_input)
+                            KeyPresser.press(button_input)
                             action_text = f"Кнопка: {button_input}"
 
                         last_press_time = current_time
@@ -724,7 +907,7 @@ def player2_interface():
             <div class="status-box connected">
                 <h3>✅ ПОДКЛЮЧЕНО</h3>
                 <p><strong>Сервер:</strong> {st.session_state.client.server_address}</p>
-                <p><strong>Статус:</strong> Готов отправлять команды</p>
+                <p><strong>Статус:</strong> Готов отправвать команды</p>
             </div>
             """, unsafe_allow_html=True)
         else:
